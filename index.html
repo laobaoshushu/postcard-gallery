@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Postcard Gallery</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #f5f5f5;
+}
+
+header {
+  padding: 10px;
+  background: white;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+select {
+  padding: 6px;
+}
+
+.grid {
+  column-count: 4;
+  column-gap: 12px;
+  padding: 12px;
+}
+
+.card {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.inner {
+  position: relative;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card.flipped .inner {
+  transform: rotateY(180deg);
+}
+
+img {
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+  backface-visibility: hidden;
+}
+
+.back {
+  position: absolute;
+  top: 0;
+  transform: rotateY(180deg);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <select id="countryFilter">
+    <option value="all">全部国家</option>
+  </select>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const supabaseUrl = "https://supabase.com/dashboard/project/gjzqcayljmodmlgkjyeq";
+const supabaseKey = "sb_publishable_8nCJWFQOaNA4XNFkQGBYsw__KEId3bZ";
+
+const client = supabase.createClient(supabaseUrl, supabaseKey);
+
+let allData = [];
+
+async function load() {
+  const { data } = await client.from("postcards").select("*");
+  allData = data;
+
+  initFilters(data);
+  render(data);
+}
+
+function initFilters(data) {
+  const select = document.getElementById("countryFilter");
+
+  const countries = [...new Set(data.map(i => i.country))];
+
+  countries.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.innerText = c;
+    select.appendChild(opt);
+  });
+
+  select.onchange = () => {
+    const v = select.value;
+    if (v === "all") render(allData);
+    else render(allData.filter(i => i.country === v));
+  };
+}
+
+function render(data) {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  data.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <div class="inner">
+        <div>
+          <img src="${item.front_image}" />
+        </div>
+        <div class="back">
+          <img src="${item.back_image}" />
+        </div>
+      </div>
+    `;
+
+    card.onclick = () => {
+      card.classList.toggle("flipped");
+    };
+
+    grid.appendChild(card);
+  });
+}
+
+load();
+</script>
+
+</body>
+</html>
